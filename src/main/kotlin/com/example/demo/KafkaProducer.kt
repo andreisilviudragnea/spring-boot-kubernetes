@@ -7,6 +7,8 @@ import org.apache.kafka.common.serialization.StringSerializer
 import java.util.*
 
 fun kafkaProducer() {
+    // TODO: Inspect metadata metrics
+
     val producer = KafkaProducer<String, String>(Properties().also {
         it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
         it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
@@ -19,7 +21,7 @@ fun kafkaProducer() {
     // 1. DNS resolution in constructor call thread (ClientUtils.parseAndValidateAddresses)
     // 2. DNS resolution in producer thread
     // 3. API_VERSIONS request in producer thread
-    // 4. METADATA request in producer thread (all topics - empty list)
+    // 4. METADATA request in producer thread (topics=[])
     // 5. INIT_PRODUCER_ID request in producer thread
 
     Thread.sleep(5_000)
@@ -27,9 +29,9 @@ fun kafkaProducer() {
     println("partitionsForTopic calls")
     println("partitions for my-topic: ${producer.partitionsFor("my-topic")}")
 
-    // 1. DNS resolution in producer thread (check if still happens in constructor call too)
+    // 1. DNS resolution in producer thread
     // 2. API_VERSIONS request in producer thread
-    // 3. METADATA request in producer thread (specified topic)
+    // 3. METADATA request in producer thread (topics=["my-topic"])
 
     Thread.sleep(5_000)
 
