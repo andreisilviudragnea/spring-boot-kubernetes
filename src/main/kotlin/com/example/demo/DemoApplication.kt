@@ -15,6 +15,7 @@ fun main(args: Array<String>) {
 	val producer = KafkaProducer<String, String>(Properties().also {
 		it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
 		it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+		it[ProducerConfig.METADATA_MAX_AGE_CONFIG] = 15_000
 		it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"
 	})
 
@@ -46,6 +47,12 @@ fun main(args: Array<String>) {
 	// 1. API_VERSIONS request in producer thread
 	// 2. METADATA request in producer thread (specified topic)
 	// 3. PRODUCE request in producer thread
+
+	Thread.sleep(2_000)
+
+	println("metadata refresh")
+
+	// 1. METADATA request in producer thread (all seen topics so far)
 
 	Thread.sleep(3600_000)
 
