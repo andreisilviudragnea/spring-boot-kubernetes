@@ -16,10 +16,10 @@ fun kafkaProducer() {
 
     println("Constructor calls")
 
-    // 1. DNS resolution in constructor call thread
+    // 1. DNS resolution in constructor call thread (ClientUtils.parseAndValidateAddresses)
     // 2. DNS resolution in producer thread
     // 3. API_VERSIONS request in producer thread
-    // 4. METADATA request in producer thread (all topics)
+    // 4. METADATA request in producer thread (all topics - empty list)
     // 5. INIT_PRODUCER_ID request in producer thread
 
     Thread.sleep(5_000)
