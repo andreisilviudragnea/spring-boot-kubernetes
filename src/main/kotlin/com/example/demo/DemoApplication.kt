@@ -7,8 +7,8 @@ import org.springframework.boot.runApplication
 class DemoApplication
 
 fun main(args: Array<String>) {
-//	kafkaProducer()
-	kafkaAdminClient()
+	kafkaProducer()
+//	kafkaAdminClient()
 
 	runApplication<DemoApplication>(*args)
 }

@@ -7,7 +7,10 @@ import org.apache.kafka.common.serialization.StringSerializer
 import java.util.*
 
 fun kafkaProducer() {
-    // TODO: Inspect metadata metrics
+    // TODO: Expose all Kafka metrics
+    // Metadata metrics:
+    // - metadata-wait-time-ns-total
+    // - metadata-age
 
     val producer = KafkaProducer<String, String>(Properties().also {
         it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
