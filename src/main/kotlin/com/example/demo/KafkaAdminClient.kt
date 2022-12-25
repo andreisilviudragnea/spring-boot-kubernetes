@@ -5,7 +5,8 @@ import org.apache.kafka.clients.admin.AdminClientConfig
 import java.util.*
 
 fun kafkaAdminClient() {
-    // TODO: Inspect metadata metrics
+    // TODO: Expose all Kafka metrics
+    // No metadata metrics
 
     val adminClient = Admin.create(Properties().also {
         it[AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG] = "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"

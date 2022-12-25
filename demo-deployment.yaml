@@ -34,7 +34,7 @@ spec:
 
         - name: demo
 
-          image: demo:1.4
+          image: demo:1.6
 
           ports:
 
