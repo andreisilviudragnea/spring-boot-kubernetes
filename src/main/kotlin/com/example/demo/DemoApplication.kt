@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
 	Thread.sleep(5_000)
 
 	println("partitionsForTopic calls")
-	println(producer.partitionsFor("my-topic"))
+	println("partitions for my-topic: ${producer.partitionsFor("my-topic")}")
 
 	// 1. DNS resolution in producer thread (check if still happens in constructor call too)
 	// 2. API_VERSIONS request in producer thread
@@ -53,6 +53,8 @@ fun main(args: Array<String>) {
 	println("metadata refresh")
 
 	// 1. METADATA request in producer thread (all seen topics so far)
+
+	println("partitions for unknown: ${producer.partitionsFor("unknown")}")
 
 	Thread.sleep(3600_000)
 
