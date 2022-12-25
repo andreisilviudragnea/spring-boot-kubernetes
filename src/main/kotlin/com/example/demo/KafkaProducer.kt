@@ -22,7 +22,7 @@ fun kafkaProducer() {
     println("Constructor calls")
 
     // 1. DNS resolution in constructor call thread (ClientUtils.parseAndValidateAddresses)
-    // 2. DNS resolution in producer thread
+    // 2. DNS resolution in producer thread (Resolved host)
     // 3. API_VERSIONS request in producer thread
     // 4. METADATA request in producer thread (topics=[])
     // 5. INIT_PRODUCER_ID request in producer thread
@@ -32,7 +32,7 @@ fun kafkaProducer() {
     println("partitionsForTopic calls")
     println("partitions for my-topic: ${producer.partitionsFor("my-topic")}")
 
-    // 1. DNS resolution in producer thread
+    // 1. DNS resolution in producer thread (Resolved host)
     // 2. API_VERSIONS request in producer thread
     // 3. METADATA request in producer thread (topics=["my-topic"])
 

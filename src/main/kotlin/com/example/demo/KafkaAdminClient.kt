@@ -14,7 +14,7 @@ fun kafkaAdminClient() {
     })
 
     // 1. DNS resolution in constructor call thread (ClientUtils.parseAndValidateAddresses)
-    // 2. DNS resolution in admin thread
+    // 2. DNS resolution in admin thread (Resolved host)
     // 3. API_VERSIONS request in admin thread
     // 4. METADATA request in admin thread (topics=[])
 
@@ -23,7 +23,7 @@ fun kafkaAdminClient() {
     println("list topics calls")
     adminClient.listTopics()
 
-    // 1. DNS resolution in admin thread
+    // 1. DNS resolution in admin thread (Resolved host)
     // 2. API_VERSIONS request in admin thread
     // 3. METADATA request in admin thread (topics=null)
 
