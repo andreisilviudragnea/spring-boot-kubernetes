@@ -8,9 +8,16 @@ import java.util.*
 
 fun kafkaProducer() {
     // TODO: Expose all Kafka metrics
-    // Metadata metrics:
+    // Blocking-related metrics:
     // - metadata-wait-time-ns-total // TODO Alert on this increasing too much
     // - metadata-age
+    // - waiting-threads
+    // - buffer-total-bytes
+    // - buffer-available-bytes
+    // - buffer-exhausted-total
+    // - buffer-exhausted-rate
+    // - bufferpool-wait-ratio
+    // - bufferpool-wait-time-ns-total
 
     val producer = KafkaProducer<String, String>(Properties().also {
         it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
