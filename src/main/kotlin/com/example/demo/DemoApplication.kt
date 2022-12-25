@@ -14,7 +14,7 @@ fun main(args: Array<String>) {
 	val producer = KafkaProducer<String, String>(Properties().also {
 		it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
 		it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-		it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = "localhost:50956"
+		it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"
 	})
 
 	Thread.sleep(5_000)
