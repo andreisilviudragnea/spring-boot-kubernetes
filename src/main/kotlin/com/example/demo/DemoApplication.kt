@@ -42,6 +42,10 @@ fun main(args: Array<String>) {
 	producer.send(ProducerRecord("my-topic", "cevaaa"))
 
 	// 1. PRODUCE request in producer thread
+	// OR
+	// 1. API_VERSIONS request in producer thread
+	// 2. METADATA request in producer thread (specified topic)
+	// 3. PRODUCE request in producer thread
 
 	Thread.sleep(3600_000)
 
