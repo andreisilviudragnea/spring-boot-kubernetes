@@ -40,9 +40,9 @@ fun kafkaProducer() {
     producer.send(ProducerRecord("my-topic", "cevaaa"))
 
     // 1. PRODUCE request in producer thread
-    // OR
+    // OR (if no partitionsFor call)
     // 1. API_VERSIONS request in producer thread
-    // 2. METADATA request in producer thread (specified topic)
+    // 2. METADATA request in producer thread (topics=["my-topic"])
     // 3. PRODUCE request in producer thread
 
     Thread.sleep(2_000)

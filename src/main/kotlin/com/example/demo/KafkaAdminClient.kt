@@ -9,7 +9,7 @@ fun kafkaAdminClient() {
 
     val adminClient = Admin.create(Properties().also {
         it[AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG] = "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"
-        // TODO: Metadata refresh
+        it[AdminClientConfig.METADATA_MAX_AGE_CONFIG] = 15_000
     })
 
     // 1. DNS resolution in constructor call thread (ClientUtils.parseAndValidateAddresses)
@@ -25,6 +25,10 @@ fun kafkaAdminClient() {
     // 1. DNS resolution in admin thread
     // 2. API_VERSIONS request in admin thread
     // 3. METADATA request in admin thread (topics=null)
+
+    println("metadata refresh")
+
+    // 1. METADATA request in admin thread (topics=[])
 
     Thread.sleep(3600_000)
 }
