@@ -9,7 +9,7 @@ import java.util.*
 fun kafkaProducer() {
     // TODO: Expose all Kafka metrics
     // Metadata metrics:
-    // - metadata-wait-time-ns-total
+    // - metadata-wait-time-ns-total // TODO Alert on this increasing too much
     // - metadata-age
 
     val producer = KafkaProducer<String, String>(Properties().also {
