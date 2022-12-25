@@ -21,6 +21,7 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.apache.kafka:kafka-clients:3.3.1")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
