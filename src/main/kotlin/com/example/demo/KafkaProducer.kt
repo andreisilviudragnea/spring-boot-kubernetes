@@ -1,12 +1,13 @@
 package com.example.demo
 
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringSerializer
 import java.util.*
 
-fun kafkaProducer() {
+fun kafkaProducer(): Producer<String, String> {
     // TODO: Expose all Kafka metrics
     // Blocking-related metrics:
     // - metadata-wait-time-ns-total // TODO Alert on this increasing too much
@@ -63,5 +64,7 @@ fun kafkaProducer() {
 
     println("partitions for unknown: ${producer.partitionsFor("unknown")}")
 
-    Thread.sleep(3600_000)
+    Thread.sleep(10_000)
+
+    return producer
 }

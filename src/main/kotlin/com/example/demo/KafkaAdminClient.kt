@@ -4,7 +4,7 @@ import org.apache.kafka.clients.admin.Admin
 import org.apache.kafka.clients.admin.AdminClientConfig
 import java.util.*
 
-fun kafkaAdminClient() {
+fun kafkaAdminClient(): Admin {
     // TODO: Expose all Kafka metrics
     // No metadata metrics
 
@@ -31,5 +31,7 @@ fun kafkaAdminClient() {
 
     // 1. METADATA request in admin thread (topics=[])
 
-    Thread.sleep(3600_000)
+    Thread.sleep(10_000)
+
+    return adminClient
 }
