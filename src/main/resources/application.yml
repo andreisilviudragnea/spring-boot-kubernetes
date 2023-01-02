@@ -1,0 +1,9 @@
+logging:
+  level:
+    root: trace
+spring:
+  kafka:
+    producer:
+      bootstrap-servers: my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092
+      properties:
+        metadata-max-age-ms: 15_000
