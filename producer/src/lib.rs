@@ -2,11 +2,39 @@ use robusta_jni::bridge;
 
 use std::sync::RwLock;
 
+use log::info;
 use once_cell::sync::Lazy;
-use rdkafka::producer::{DefaultProducerContext, ThreadedProducer};
+use rdkafka::config::{FromClientConfig, FromClientConfigAndContext};
+use rdkafka::error::KafkaResult;
+use rdkafka::producer::{DeliveryResult, ProducerContext, ThreadedProducer};
+use rdkafka::{ClientConfig, ClientContext};
 use std::collections::HashMap;
 
-static GLOBAL_DATA: Lazy<RwLock<HashMap<String, ThreadedProducer<DefaultProducerContext>>>> =
+pub struct MyProducer<C: ProducerContext + 'static>(ThreadedProducer<C>);
+
+pub struct LoggingProducerContext;
+
+impl ClientContext for LoggingProducerContext {}
+
+impl ProducerContext for LoggingProducerContext {
+    type DeliveryOpaque = ();
+
+    fn delivery(
+        &self,
+        delivery_result: &DeliveryResult<'_>,
+        _delivery_opaque: Self::DeliveryOpaque,
+    ) {
+        info!("Delivery result {delivery_result:?}")
+    }
+}
+
+impl FromClientConfig for MyProducer<LoggingProducerContext> {
+    fn from_config(config: &ClientConfig) -> KafkaResult<Self> {
+        ThreadedProducer::from_config_and_context(config, LoggingProducerContext).map(MyProducer)
+    }
+}
+
+static GLOBAL_DATA: Lazy<RwLock<HashMap<String, MyProducer<LoggingProducerContext>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
 #[bridge]
@@ -75,7 +103,7 @@ mod jni {
 
             let producer = map.get(&bootstrap_servers).unwrap();
 
-            let result = producer.send(
+            let result = producer.0.send(
                 BaseRecord::with_opaque_to(&topic, ())
                     .key(&key)
                     .payload(&payload),
