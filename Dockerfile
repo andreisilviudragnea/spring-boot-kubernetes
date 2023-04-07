@@ -1,16 +1,17 @@
 FROM ubuntu:22.04 as rust
 
-RUN /bin/bash -c "$(curl -fsSL https://apt.kitware.com/kitware-archive.sh)"
-RUN apt-get update && apt-get install -y cmake
+RUN apt-get update && apt-get install -y curl cmake g++
 
-RUN /bin/bash -c "$(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y)"
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-RUN /bin/bash -c "$(source $HOME/.cargo/env && cargo --version)"
+RUN chmod +x $HOME/.cargo/env
+
+RUN $HOME/.cargo/bin/cargo --version
 
 WORKDIR producer
 COPY producer .
 
-RUN /bin/bash -c "$(source $HOME/.cargo/env && cargo build)"
+RUN $HOME/.cargo/bin/cargo build
 
 FROM eclipse-temurin:19-jre as builder
 WORKDIR application
