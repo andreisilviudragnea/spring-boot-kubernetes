@@ -43,9 +43,8 @@ fun main(args: Array<String>) {
 
     val rustKafkaProducer = RustKafkaProducer()
 
-    rustKafkaProducer.init("localhost:9092", false)
-
-    rustKafkaProducer.send("localhost:9092", "quickstart-events", "key", "payload")
+    rustKafkaProducer.init("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092", false)
+    rustKafkaProducer.send("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092", "quickstart-events", "key", "payload")
 
     kafkaProducer()
     runApplication<DemoApplication>(*args)

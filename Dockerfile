@@ -25,7 +25,7 @@ COPY --from=builder application/dependencies/ ./
 COPY --from=builder application/spring-boot-loader/ ./
 COPY --from=builder application/snapshot-dependencies/ ./
 COPY --from=builder application/application/ ./
-COPY --from=rust producer/target/debug/ ./
+COPY --from=rust producer/target/debug/libproducer* ./
 
 RUN ls -al
 
