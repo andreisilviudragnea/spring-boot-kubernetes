@@ -47,6 +47,8 @@ fun main() {
 
     Thread.sleep(100_000)
 
+    rustKafkaProducer.close("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092")
+
 //    kafkaProducer()
 //    runApplication<DemoApplication>(*args)
 }

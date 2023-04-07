@@ -10,7 +10,7 @@ use rdkafka::producer::{DeliveryResult, ProducerContext, ThreadedProducer};
 use rdkafka::{ClientConfig, ClientContext};
 use std::collections::HashMap;
 
-pub struct MyProducer<C: ProducerContext + 'static>(ThreadedProducer<C>);
+pub struct LoggingThreadedProducer<C: ProducerContext + 'static>(ThreadedProducer<C>);
 
 pub struct LoggingProducerContext;
 
@@ -28,18 +28,18 @@ impl ProducerContext for LoggingProducerContext {
     }
 }
 
-impl FromClientConfig for MyProducer<LoggingProducerContext> {
+impl FromClientConfig for LoggingThreadedProducer<LoggingProducerContext> {
     fn from_config(config: &ClientConfig) -> KafkaResult<Self> {
-        ThreadedProducer::from_config_and_context(config, LoggingProducerContext).map(MyProducer)
+        ThreadedProducer::from_config_and_context(config, LoggingProducerContext).map(LoggingThreadedProducer)
     }
 }
 
-static GLOBAL_DATA: Lazy<RwLock<HashMap<String, MyProducer<LoggingProducerContext>>>> =
+static PRODUCERS_MAP: Lazy<RwLock<HashMap<String, LoggingThreadedProducer<LoggingProducerContext>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
 #[bridge]
 mod jni {
-    use crate::GLOBAL_DATA;
+    use crate::PRODUCERS_MAP;
     use log::{info, LevelFilter};
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::BaseRecord;
@@ -83,11 +83,11 @@ mod jni {
 
             let producer = client_config.create().expect("Producer creation failed");
 
-            let mut map = GLOBAL_DATA.write().unwrap();
+            let mut map = PRODUCERS_MAP.write().unwrap();
 
             map.insert(bootstrap_servers.clone(), producer);
 
-            println!("Created producer {bootstrap_servers} {use_ssl}");
+            info!("Created producer {bootstrap_servers} {use_ssl}");
 
             Ok(())
         }
@@ -99,7 +99,7 @@ mod jni {
             key: String,
             payload: String,
         ) -> JniResult<()> {
-            let map = GLOBAL_DATA.read().unwrap();
+            let map = PRODUCERS_MAP.read().unwrap();
 
             let producer = map.get(&bootstrap_servers).unwrap();
 
@@ -109,17 +109,17 @@ mod jni {
                     .payload(&payload),
             );
 
-            println!("Send result {result:?}");
+            info!("Send result {result:?}");
 
             Ok(())
         }
 
         pub extern "jni" fn close(self, bootstrap_servers: String) -> JniResult<()> {
-            let mut map = GLOBAL_DATA.write().unwrap();
+            let mut map = PRODUCERS_MAP.write().unwrap();
 
             map.remove(&bootstrap_servers);
 
-            println!("Closed producer {bootstrap_servers}");
+            info!("Closed producer {bootstrap_servers}");
 
             Ok(())
         }
