@@ -1,6 +1,7 @@
 package com.example.demo
 
 import io.micrometer.core.instrument.logging.LoggingMeterRegistry
+import org.apache.kafka.clients.producer.RustKafkaProducer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.autoconfigure.metrics.KafkaMetricsAutoConfiguration
@@ -39,6 +40,13 @@ class DemoApplication {
 
 fun main(args: Array<String>) {
     System.loadLibrary("producer")
+
+    val rustKafkaProducer = RustKafkaProducer()
+
+    rustKafkaProducer.init("localhost:9092", false)
+
+    rustKafkaProducer.send("localhost:9092", "quickstart-events", "key", "payload")
+
     kafkaProducer()
     runApplication<DemoApplication>(*args)
 }
