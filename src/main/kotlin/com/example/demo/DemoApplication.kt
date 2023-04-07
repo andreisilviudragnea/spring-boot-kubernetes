@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.autoconfigure.metrics.KafkaMetricsAutoConfiguration
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.kafka.core.KafkaTemplate
 
@@ -38,7 +37,7 @@ class DemoApplication {
     class BeanClass
 }
 
-fun main(args: Array<String>) {
+fun main() {
     System.loadLibrary("producer")
 
     val rustKafkaProducer = RustKafkaProducer()
@@ -46,6 +45,8 @@ fun main(args: Array<String>) {
     rustKafkaProducer.init("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092", false)
     rustKafkaProducer.send("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092", "quickstart-events", "key", "payload")
 
-    kafkaProducer()
-    runApplication<DemoApplication>(*args)
+    Thread.sleep(100_000)
+
+//    kafkaProducer()
+//    runApplication<DemoApplication>(*args)
 }
