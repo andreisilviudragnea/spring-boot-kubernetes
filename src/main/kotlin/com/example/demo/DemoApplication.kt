@@ -38,5 +38,7 @@ class DemoApplication {
 }
 
 fun main(args: Array<String>) {
+    System.loadLibrary("producer")
+    kafkaProducer()
     runApplication<DemoApplication>(*args)
 }
