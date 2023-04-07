@@ -11,11 +11,11 @@ static GLOBAL_DATA: Lazy<RwLock<HashMap<String, ThreadedProducer<DefaultProducer
 
 #[bridge]
 mod jni {
-    use std::time::Duration;
     use crate::GLOBAL_DATA;
-    use rdkafka::producer::{BaseRecord, DefaultProducerContext, ThreadedProducer};
-    use rdkafka::ClientConfig;
+    use log::{info, LevelFilter};
     use rdkafka::config::RDKafkaLogLevel;
+    use rdkafka::producer::BaseRecord;
+    use rdkafka::ClientConfig;
     use robusta_jni::convert::{
         Field, IntoJavaValue, Signature, TryFromJavaValue, TryIntoJavaValue,
     };
@@ -23,24 +23,31 @@ mod jni {
     use robusta_jni::jni::errors::Result as JniResult;
     use robusta_jni::jni::objects::AutoLocal;
     use robusta_jni::jni::JNIEnv;
+    use simple_logger::SimpleLogger;
     use std::error::Error;
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
     #[package(org.apache.kafka.clients.producer)]
-    pub struct RustKafkaProducer<'env: 'borrow, 'borrow> {
+    pub struct KafkaProducer<'env: 'borrow, 'borrow> {
         #[instance]
         raw: AutoLocal<'env, 'borrow>,
     }
 
-    impl<'env: 'borrow, 'borrow> RustKafkaProducer<'env, 'borrow> {
+    impl<'env: 'borrow, 'borrow> KafkaProducer<'env, 'borrow> {
         #[constructor]
         pub extern "java" fn new(env: &'borrow JNIEnv<'env>) -> JniResult<Self> {}
 
         pub extern "jni" fn init(self, bootstrap_servers: String, use_ssl: bool) -> JniResult<()> {
+            SimpleLogger::new()
+                .with_level(LevelFilter::Info)
+                .init()
+                .unwrap();
+
             let mut client_config = ClientConfig::new();
 
-            client_config.set("compression.type", "lz4");
+            // client_config.set("compression.type", "lz4");
 
+            info!("bootstrap.servers {}", bootstrap_servers);
             client_config.set("bootstrap.servers", bootstrap_servers.clone());
             if use_ssl {
                 client_config.set("security.protocol", "SSL");
@@ -48,8 +55,7 @@ mod jni {
 
             client_config.set_log_level(RDKafkaLogLevel::Debug);
 
-            let producer: ThreadedProducer<DefaultProducerContext> =
-                client_config.create().expect("Producer creation failed");
+            let producer = client_config.create().expect("Producer creation failed");
 
             let mut map = GLOBAL_DATA.write().unwrap();
 
@@ -76,8 +82,6 @@ mod jni {
                     .key(&key)
                     .payload(&payload),
             );
-
-            producer.poll(Duration::from_millis(100));
 
             println!("Send result {result:?}");
 
