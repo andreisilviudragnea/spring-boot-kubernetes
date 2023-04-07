@@ -16,10 +16,8 @@ mod jni {
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::BaseRecord;
     use rdkafka::ClientConfig;
-    use robusta_jni::convert::{
-        Field, IntoJavaValue, Signature, TryFromJavaValue, TryIntoJavaValue,
-    };
-    use robusta_jni::jni::errors::Error as JniError;
+    use robusta_jni::convert::{IntoJavaValue, Signature, TryFromJavaValue, TryIntoJavaValue};
+
     use robusta_jni::jni::errors::Result as JniResult;
     use robusta_jni::jni::objects::AutoLocal;
     use robusta_jni::jni::JNIEnv;
@@ -28,12 +26,12 @@ mod jni {
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
     #[package(org.apache.kafka.clients.producer)]
-    pub struct KafkaProducer<'env: 'borrow, 'borrow> {
+    pub struct RustKafkaProducer<'env: 'borrow, 'borrow> {
         #[instance]
         raw: AutoLocal<'env, 'borrow>,
     }
 
-    impl<'env: 'borrow, 'borrow> KafkaProducer<'env, 'borrow> {
+    impl<'env: 'borrow, 'borrow> RustKafkaProducer<'env, 'borrow> {
         #[constructor]
         pub extern "java" fn new(env: &'borrow JNIEnv<'env>) -> JniResult<Self> {}
 
