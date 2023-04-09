@@ -30,19 +30,21 @@ impl ProducerContext for LoggingProducerContext {
 
 impl FromClientConfig for LoggingThreadedProducer<LoggingProducerContext> {
     fn from_config(config: &ClientConfig) -> KafkaResult<Self> {
-        ThreadedProducer::from_config_and_context(config, LoggingProducerContext).map(LoggingThreadedProducer)
+        ThreadedProducer::from_config_and_context(config, LoggingProducerContext)
+            .map(LoggingThreadedProducer)
     }
 }
 
-static PRODUCERS_MAP: Lazy<RwLock<HashMap<String, LoggingThreadedProducer<LoggingProducerContext>>>> =
-    Lazy::new(|| RwLock::new(HashMap::new()));
+static PRODUCERS_MAP: Lazy<
+    RwLock<HashMap<String, LoggingThreadedProducer<LoggingProducerContext>>>,
+> = Lazy::new(|| RwLock::new(HashMap::new()));
 
 #[bridge]
 mod jni {
     use crate::PRODUCERS_MAP;
     use log::{info, LevelFilter};
     use rdkafka::config::RDKafkaLogLevel;
-    use rdkafka::producer::BaseRecord;
+    use rdkafka::producer::{BaseRecord, Producer};
     use rdkafka::ClientConfig;
     use robusta_jni::convert::{IntoJavaValue, Signature, TryFromJavaValue, TryIntoJavaValue};
 
@@ -51,6 +53,7 @@ mod jni {
     use robusta_jni::jni::JNIEnv;
     use simple_logger::SimpleLogger;
     use std::error::Error;
+    use std::time::Duration;
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
     #[package(org.apache.kafka.clients.producer)]
@@ -90,6 +93,31 @@ mod jni {
             info!("Created producer {bootstrap_servers} {use_ssl}");
 
             Ok(())
+        }
+
+        pub extern "jni" fn fetchMetadata(
+            self,
+            bootstrap_servers: String,
+        ) -> JniResult<Vec<String>> {
+            let map = PRODUCERS_MAP.read().unwrap();
+
+            let producer = map.get(&bootstrap_servers).unwrap();
+
+            let metadata = producer
+                .0
+                .client()
+                .fetch_metadata(None, Duration::from_secs(60))
+                .unwrap();
+
+            let topics = metadata
+                .topics()
+                .iter()
+                .map(|topic| topic.name().to_string())
+                .collect();
+
+            info!("Topics {topics:?}");
+
+            Ok(topics)
         }
 
         pub extern "jni" fn send(

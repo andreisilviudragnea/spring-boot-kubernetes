@@ -43,6 +43,10 @@ fun main() {
     val rustKafkaProducer = RustKafkaProducer()
 
     rustKafkaProducer.init("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092", false)
+
+    val topics = rustKafkaProducer.fetchMetadata("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092")
+    println(topics)
+
     rustKafkaProducer.send("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092", "quickstart-events", "key", "payload")
 
     Thread.sleep(100_000)
