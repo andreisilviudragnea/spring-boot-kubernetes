@@ -2,12 +2,13 @@ use robusta_jni::bridge;
 
 use std::sync::RwLock;
 
-use log::info;
+use log::{info, LevelFilter};
 use once_cell::sync::Lazy;
 use rdkafka::config::{FromClientConfig, FromClientConfigAndContext};
 use rdkafka::error::KafkaResult;
 use rdkafka::producer::{DeliveryResult, ProducerContext, ThreadedProducer};
 use rdkafka::{ClientConfig, ClientContext};
+use simple_logger::SimpleLogger;
 use std::collections::HashMap;
 
 pub struct LoggingThreadedProducer<C: ProducerContext + 'static>(ThreadedProducer<C>);
@@ -37,12 +38,18 @@ impl FromClientConfig for LoggingThreadedProducer<LoggingProducerContext> {
 
 static PRODUCERS_MAP: Lazy<
     RwLock<HashMap<String, LoggingThreadedProducer<LoggingProducerContext>>>,
-> = Lazy::new(|| RwLock::new(HashMap::new()));
+> = Lazy::new(|| {
+    SimpleLogger::new()
+        .with_level(LevelFilter::Trace)
+        .init()
+        .unwrap();
+    RwLock::new(HashMap::new())
+});
 
 #[bridge]
 mod jni {
     use crate::PRODUCERS_MAP;
-    use log::{info, LevelFilter};
+    use log::{info, trace};
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
     use rdkafka::ClientConfig;
@@ -51,7 +58,7 @@ mod jni {
     use robusta_jni::jni::errors::Result as JniResult;
     use robusta_jni::jni::objects::AutoLocal;
     use robusta_jni::jni::JNIEnv;
-    use simple_logger::SimpleLogger;
+
     use std::error::Error;
     use std::time::Duration;
 
@@ -67,10 +74,11 @@ mod jni {
         pub extern "java" fn new(env: &'borrow JNIEnv<'env>) -> JniResult<Self> {}
 
         pub extern "jni" fn init(self, bootstrap_servers: String, use_ssl: bool) -> JniResult<()> {
-            SimpleLogger::new()
-                .with_level(LevelFilter::Info)
-                .init()
-                .unwrap();
+            let map = PRODUCERS_MAP.read().unwrap();
+
+            if map.get(&bootstrap_servers).is_some() {
+                return Ok(());
+            }
 
             let mut client_config = ClientConfig::new();
 
@@ -83,6 +91,8 @@ mod jni {
             }
 
             client_config.set_log_level(RDKafkaLogLevel::Debug);
+
+            trace!("MUHAHA");
 
             let producer = client_config.create().expect("Producer creation failed");
 
@@ -106,7 +116,7 @@ mod jni {
             let metadata = producer
                 .0
                 .client()
-                .fetch_metadata(None, Duration::from_secs(60))
+                .fetch_metadata(None, Duration::from_secs(5))
                 .unwrap();
 
             let topics = metadata
