@@ -5,7 +5,7 @@ class RustKafkaProducer {
 
     external fun fetchMetadata(bootstrapServers: String?): ArrayList<String>
 
-    external fun send(bootstrapServers: String?, topic: String?, key: String?, payload: String?)
+    external fun send(bootstrapServers: String?, topic: String?, key: String?, payload: ArrayList<Byte>?)
 
     external fun close(bootstrapServers: String?)
 }

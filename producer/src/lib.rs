@@ -2,7 +2,7 @@ use robusta_jni::bridge;
 
 use std::sync::RwLock;
 
-use log::{info, LevelFilter};
+use log::{info, trace, LevelFilter};
 use once_cell::sync::Lazy;
 use rdkafka::config::{FromClientConfig, FromClientConfigAndContext};
 use rdkafka::error::KafkaResult;
@@ -48,7 +48,7 @@ static PRODUCERS_MAP: Lazy<
 
 #[bridge]
 mod jni {
-    use crate::PRODUCERS_MAP;
+    use crate::{LoggingProducerContext, LoggingThreadedProducer, PRODUCERS_MAP};
     use log::{info, trace};
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
@@ -74,10 +74,12 @@ mod jni {
         pub extern "java" fn new(env: &'borrow JNIEnv<'env>) -> JniResult<Self> {}
 
         pub extern "jni" fn init(self, bootstrap_servers: String, use_ssl: bool) -> JniResult<()> {
-            let map = PRODUCERS_MAP.read().unwrap();
+            {
+                let map = PRODUCERS_MAP.read().unwrap();
 
-            if map.get(&bootstrap_servers).is_some() {
-                return Ok(());
+                if map.get(&bootstrap_servers).is_some() {
+                    return Ok(());
+                }
             }
 
             let mut client_config = ClientConfig::new();
@@ -86,13 +88,12 @@ mod jni {
 
             info!("bootstrap.servers {}", bootstrap_servers);
             client_config.set("bootstrap.servers", bootstrap_servers.clone());
+            client_config.set("broker.address.family", "v4");
             if use_ssl {
                 client_config.set("security.protocol", "SSL");
             }
 
             client_config.set_log_level(RDKafkaLogLevel::Debug);
-
-            trace!("MUHAHA");
 
             let producer = client_config.create().expect("Producer creation failed");
 
@@ -135,16 +136,17 @@ mod jni {
             bootstrap_servers: String,
             topic: String,
             key: String,
-            payload: String,
+            payload: Vec<i8>,
         ) -> JniResult<()> {
             let map = PRODUCERS_MAP.read().unwrap();
 
             let producer = map.get(&bootstrap_servers).unwrap();
 
+            let vec = payload.into_iter().map(|i| i as u8).collect::<Vec<_>>();
             let result = producer.0.send(
                 BaseRecord::with_opaque_to(&topic, ())
                     .key(&key)
-                    .payload(&payload),
+                    .payload(&vec),
             );
 
             info!("Send result {result:?}");
