@@ -8,6 +8,8 @@ use rdkafka::config::{FromClientConfig, FromClientConfigAndContext};
 use rdkafka::error::KafkaResult;
 use rdkafka::producer::{DeliveryResult, ProducerContext, ThreadedProducer};
 use rdkafka::{ClientConfig, ClientContext};
+use robusta_jni::jni::objects::AutoArray;
+use robusta_jni::jni::sys::{jbyte, jsize};
 use simple_logger::SimpleLogger;
 use std::collections::HashMap;
 
@@ -48,7 +50,7 @@ static PRODUCERS_MAP: Lazy<
 
 #[bridge]
 mod jni {
-    use crate::PRODUCERS_MAP;
+    use crate::{borrow_as_slice, PRODUCERS_MAP};
     use log::info;
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
@@ -145,21 +147,13 @@ mod jni {
 
             let jobject = payload.into_inner();
 
-            let jbyte_array = env
-                .get_byte_array_elements(jobject, ReleaseMode::NoCopyBack)
-                .unwrap();
-            let length = env.get_array_length(jobject).unwrap();
-
-            let byte_slice;
-            unsafe {
-                byte_slice =
-                    std::slice::from_raw_parts(jbyte_array.as_ptr() as *const u8, length as usize);
-            }
+            let jbyte_array = env.get_byte_array_elements(jobject, ReleaseMode::NoCopyBack)?;
+            let length = env.get_array_length(jobject)?;
 
             let result = producer.0.send(
                 BaseRecord::with_opaque_to(&topic, ())
                     .key(&key)
-                    .payload(byte_slice),
+                    .payload(borrow_as_slice(&jbyte_array, length)),
             );
 
             info!("Send result {result:?}");
@@ -177,4 +171,8 @@ mod jni {
             Ok(())
         }
     }
+}
+
+fn borrow_as_slice<'a>(jbyte_array: &'a AutoArray<jbyte>, length: jsize) -> &'a [u8] {
+    unsafe { std::slice::from_raw_parts(jbyte_array.as_ptr() as *const u8, length as usize) }
 }
