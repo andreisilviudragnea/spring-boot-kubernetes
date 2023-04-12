@@ -56,11 +56,12 @@ mod jni {
     use robusta_jni::convert::{IntoJavaValue, Signature, TryFromJavaValue, TryIntoJavaValue};
 
     use robusta_jni::jni::errors::Result as JniResult;
-    use robusta_jni::jni::objects::AutoLocal;
+    use robusta_jni::jni::objects::{AutoLocal, JObject};
     use robusta_jni::jni::JNIEnv;
 
     use std::error::Error;
     use std::time::Duration;
+    use robusta_jni::jni::sys::{jarray, jbyteArray, jobject};
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
     #[package(org.apache.kafka.clients.producer)]
@@ -133,16 +134,17 @@ mod jni {
 
         pub extern "jni" fn send(
             self,
+            env: &'borrow JNIEnv<'env>,
             bootstrap_servers: String,
             topic: String,
             key: String,
-            payload: Vec<i8>,
+            payload: JObject<'env>,
         ) -> JniResult<()> {
             let map = PRODUCERS_MAP.read().unwrap();
 
             let producer = map.get(&bootstrap_servers).unwrap();
 
-            let vec = payload.into_iter().map(|i| i as u8).collect::<Vec<_>>();
+            let vec = env.convert_byte_array(payload.into_inner()).unwrap();
             let result = producer.0.send(
                 BaseRecord::with_opaque_to(&topic, ())
                     .key(&key)

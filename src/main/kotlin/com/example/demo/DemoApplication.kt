@@ -48,10 +48,10 @@ fun main() {
     println(topics)
 
     rustKafkaProducer.send(
-            "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092",
-            "quickstart-events",
-            "key",
-            arrayListOf(*"payload".toByteArray().toTypedArray())
+        "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092",
+        "quickstart-events",
+        "key",
+        "payload".toByteArray()
     )
 
     Thread.sleep(100_000)
