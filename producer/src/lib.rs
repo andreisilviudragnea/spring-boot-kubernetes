@@ -2,7 +2,7 @@ use robusta_jni::bridge;
 
 use std::sync::RwLock;
 
-use log::{info, trace, LevelFilter};
+use log::{info, LevelFilter};
 use once_cell::sync::Lazy;
 use rdkafka::config::{FromClientConfig, FromClientConfigAndContext};
 use rdkafka::error::KafkaResult;
@@ -48,20 +48,19 @@ static PRODUCERS_MAP: Lazy<
 
 #[bridge]
 mod jni {
-    use crate::{LoggingProducerContext, LoggingThreadedProducer, PRODUCERS_MAP};
-    use log::{info, trace};
+    use crate::PRODUCERS_MAP;
+    use log::info;
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
     use rdkafka::ClientConfig;
     use robusta_jni::convert::{IntoJavaValue, Signature, TryFromJavaValue, TryIntoJavaValue};
 
     use robusta_jni::jni::errors::Result as JniResult;
-    use robusta_jni::jni::objects::{AutoLocal, JObject};
+    use robusta_jni::jni::objects::{AutoLocal, JObject, ReleaseMode};
     use robusta_jni::jni::JNIEnv;
 
     use std::error::Error;
     use std::time::Duration;
-    use robusta_jni::jni::sys::{jarray, jbyteArray, jobject};
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
     #[package(org.apache.kafka.clients.producer)]
@@ -144,11 +143,23 @@ mod jni {
 
             let producer = map.get(&bootstrap_servers).unwrap();
 
-            let vec = env.convert_byte_array(payload.into_inner()).unwrap();
+            let jobject = payload.into_inner();
+
+            let jbyte_array = env
+                .get_byte_array_elements(jobject, ReleaseMode::NoCopyBack)
+                .unwrap();
+            let length = env.get_array_length(jobject).unwrap();
+
+            let byte_slice;
+            unsafe {
+                byte_slice =
+                    std::slice::from_raw_parts(jbyte_array.as_ptr() as *const u8, length as usize);
+            }
+
             let result = producer.0.send(
                 BaseRecord::with_opaque_to(&topic, ())
                     .key(&key)
-                    .payload(&vec),
+                    .payload(byte_slice),
             );
 
             info!("Send result {result:?}");
