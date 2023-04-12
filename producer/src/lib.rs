@@ -8,6 +8,11 @@ use rdkafka::config::{FromClientConfig, FromClientConfigAndContext};
 use rdkafka::error::KafkaResult;
 use rdkafka::producer::{DeliveryResult, ProducerContext, ThreadedProducer};
 use rdkafka::{ClientConfig, ClientContext};
+use robusta_jni::convert::{Signature, TryFromJavaValue};
+use robusta_jni::jni::errors::Result as JniResult;
+use robusta_jni::jni::objects::{JObject, ReleaseMode};
+use robusta_jni::jni::sys::jobject;
+use robusta_jni::jni::JNIEnv;
 use simple_logger::SimpleLogger;
 use std::collections::HashMap;
 
@@ -46,9 +51,34 @@ static PRODUCERS_MAP: Lazy<
     RwLock::new(HashMap::new())
 });
 
+pub struct ByteSlice<'env>(&'env [u8]);
+
+impl<'env: 'borrow, 'borrow> TryFromJavaValue<'env, 'borrow> for ByteSlice<'env> {
+    type Source = jobject;
+
+    fn try_from(s: Self::Source, env: &'borrow JNIEnv<'env>) -> JniResult<Self> {
+        let jbyte_array = env.get_byte_array_elements(s, ReleaseMode::NoCopyBack)?;
+
+        let length = env.get_array_length(s)?;
+
+        let byte_slice;
+
+        unsafe {
+            byte_slice =
+                std::slice::from_raw_parts(jbyte_array.as_ptr() as *const u8, length as usize);
+        }
+
+        Ok(ByteSlice(byte_slice))
+    }
+}
+
+impl<'env> Signature for ByteSlice<'env> {
+    const SIG_TYPE: &'static str = <JObject as Signature>::SIG_TYPE;
+}
+
 #[bridge]
 mod jni {
-    use crate::PRODUCERS_MAP;
+    use crate::{ByteSlice, PRODUCERS_MAP};
     use log::info;
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
@@ -56,7 +86,7 @@ mod jni {
     use robusta_jni::convert::{IntoJavaValue, Signature, TryFromJavaValue, TryIntoJavaValue};
 
     use robusta_jni::jni::errors::Result as JniResult;
-    use robusta_jni::jni::objects::{AutoLocal, JObject, ReleaseMode};
+    use robusta_jni::jni::objects::AutoLocal;
     use robusta_jni::jni::JNIEnv;
 
     use std::error::Error;
@@ -133,33 +163,19 @@ mod jni {
 
         pub extern "jni" fn send(
             self,
-            env: &'borrow JNIEnv<'env>,
             bootstrap_servers: String,
             topic: String,
             key: String,
-            payload: JObject<'env>,
+            payload: ByteSlice<'env>,
         ) -> JniResult<()> {
             let map = PRODUCERS_MAP.read().unwrap();
 
             let producer = map.get(&bootstrap_servers).unwrap();
 
-            let jobject = payload.into_inner();
-
-            let jbyte_array = env
-                .get_byte_array_elements(jobject, ReleaseMode::NoCopyBack)
-                .unwrap();
-            let length = env.get_array_length(jobject).unwrap();
-
-            let byte_slice;
-            unsafe {
-                byte_slice =
-                    std::slice::from_raw_parts(jbyte_array.as_ptr() as *const u8, length as usize);
-            }
-
             let result = producer.0.send(
                 BaseRecord::with_opaque_to(&topic, ())
                     .key(&key)
-                    .payload(byte_slice),
+                    .payload(payload.0),
             );
 
             info!("Send result {result:?}");

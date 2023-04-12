@@ -40,15 +40,17 @@ class DemoApplication {
 fun main() {
     System.loadLibrary("producer")
 
+    val bootstrapServers = "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"
+
     val rustKafkaProducer = RustKafkaProducer()
 
-    rustKafkaProducer.init("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092", false)
+    rustKafkaProducer.init(bootstrapServers, false)
 
-    val topics = rustKafkaProducer.fetchMetadata("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092")
+    val topics = rustKafkaProducer.fetchMetadata(bootstrapServers)
     println(topics)
 
     rustKafkaProducer.send(
-        "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092",
+        bootstrapServers,
         "quickstart-events",
         "key",
         "payload".toByteArray()
@@ -56,7 +58,7 @@ fun main() {
 
     Thread.sleep(100_000)
 
-    rustKafkaProducer.close("my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092")
+    rustKafkaProducer.close(bootstrapServers)
 
 //    kafkaProducer()
 //    runApplication<DemoApplication>(*args)
