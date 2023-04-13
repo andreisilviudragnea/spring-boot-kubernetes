@@ -1,13 +1,17 @@
 package org.apache.kafka.clients.producer
 
-class RustKafkaProducer {
+class RustKafkaProducer(bootstrapServers: String, useSsl: Boolean) {
+    init {
+        init(bootstrapServers, useSsl)
+    }
+
     companion object {
         init {
             System.loadLibrary("producer")
         }
     }
 
-    external fun init(bootstrapServers: String, useSsl: Boolean)
+    private external fun init(bootstrapServers: String, useSsl: Boolean)
 
     external fun fetchMetadata(bootstrapServers: String): ArrayList<String>
 
