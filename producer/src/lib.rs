@@ -51,7 +51,7 @@ static PRODUCERS_MAP: Lazy<
 #[bridge]
 mod jni {
     use crate::{borrow_as_slice, PRODUCERS_MAP};
-    use log::info;
+    use log::{error, info};
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
     use rdkafka::ClientConfig;
@@ -116,11 +116,18 @@ mod jni {
 
             let producer = map.get(&bootstrap_servers).unwrap();
 
-            let metadata = producer
+            let result = producer
                 .0
                 .client()
-                .fetch_metadata(None, Duration::from_secs(5))
-                .unwrap();
+                .fetch_metadata(None, Duration::from_secs(5));
+
+            let metadata = match result {
+                Ok(metadata) => metadata,
+                Err(error) => {
+                    error!("Error on fetching metadata: {error:?}");
+                    return Ok(vec![]);
+                }
+            };
 
             let topics = metadata
                 .topics()
