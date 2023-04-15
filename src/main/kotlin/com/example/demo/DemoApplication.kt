@@ -38,9 +38,7 @@ class DemoApplication {
 }
 
 fun main() {
-    val bootstrapServers = "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"
-
-    val rustKafkaProducer = RustKafkaProducer(bootstrapServers, false)
+    val rustKafkaProducer = RustKafkaProducer(mapOf("bootstrap.servers" to "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"))
 
     val topics = rustKafkaProducer.fetchMetadata()
     println(topics)

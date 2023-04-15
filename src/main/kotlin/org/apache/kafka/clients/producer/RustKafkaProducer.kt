@@ -1,10 +1,10 @@
 package org.apache.kafka.clients.producer
 
-class RustKafkaProducer(bootstrapServers: String, useSsl: Boolean) : AutoCloseable {
+class RustKafkaProducer(config: Map<String, String>) : AutoCloseable {
     private val producer: Long external get
 
     init {
-        init(bootstrapServers, useSsl)
+        init(config)
     }
 
     companion object {
@@ -13,7 +13,7 @@ class RustKafkaProducer(bootstrapServers: String, useSsl: Boolean) : AutoCloseab
         }
     }
 
-    private external fun init(bootstrapServers: String, useSsl: Boolean)
+    private external fun init(config: Map<String, String>)
 
     external fun fetchMetadata(): List<String>
 

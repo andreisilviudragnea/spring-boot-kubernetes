@@ -54,7 +54,7 @@ mod jni {
     };
 
     use robusta_jni::jni::errors::Result as JniResult;
-    use robusta_jni::jni::objects::{AutoLocal, JObject, ReleaseMode};
+    use robusta_jni::jni::objects::{AutoLocal, JObject, JString, ReleaseMode};
     use robusta_jni::jni::JNIEnv;
 
     use robusta_jni::jni::sys::jlong;
@@ -77,30 +77,29 @@ mod jni {
 
         pub extern "jni" fn init(
             mut self,
-            bootstrap_servers: String,
-            use_ssl: bool,
+            env: &'borrow JNIEnv<'env>,
+            config: JObject<'env>,
         ) -> JniResult<()> {
             let _ = INIT_LOGGING.deref();
 
             let mut client_config = ClientConfig::new();
 
-            // client_config.set("compression.type", "lz4");
+            client_config.extend(env.get_map(config)?.iter()?.map(|(key, value)| {
+                (
+                    String::from(env.get_string(JString::from(key)).unwrap()),
+                    String::from(env.get_string(JString::from(value)).unwrap()),
+                )
+            }));
 
-            client_config.set("bootstrap.servers", bootstrap_servers.clone());
-            client_config.set("broker.address.family", "v4");
-            client_config.set_log_level(RDKafkaLogLevel::Debug);
-
-            if use_ssl {
-                client_config.set("security.protocol", "SSL");
-            }
-
-            let producer: LoggingThreadedProducer<LoggingProducerContext> =
-                client_config.create().expect("Producer creation failed");
+            let producer: LoggingThreadedProducer<LoggingProducerContext> = client_config
+                .set_log_level(RDKafkaLogLevel::Debug)
+                .create()
+                .expect("Producer creation failed");
 
             self.producer
                 .set(Box::into_raw(Box::new(producer)) as jlong)?;
 
-            info!("Created producer {bootstrap_servers} {use_ssl}");
+            info!("Created producer from config {client_config:?}");
 
             Ok(())
         }
