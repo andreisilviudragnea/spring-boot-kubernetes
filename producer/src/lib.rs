@@ -37,7 +37,7 @@ impl FromClientConfig for LoggingThreadedProducer<LoggingProducerContext> {
 
 static INIT_LOGGING: Lazy<()> = Lazy::new(|| {
     SimpleLogger::new()
-        .with_level(LevelFilter::Trace)
+        .with_level(LevelFilter::Info)
         .init()
         .unwrap()
 });
