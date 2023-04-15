@@ -1,7 +1,5 @@
 use robusta_jni::bridge;
 
-use std::sync::RwLock;
-
 use log::{info, LevelFilter};
 use once_cell::sync::Lazy;
 use rdkafka::config::{FromClientConfig, FromClientConfigAndContext};
@@ -11,7 +9,6 @@ use rdkafka::{ClientConfig, ClientContext};
 use robusta_jni::jni::objects::AutoArray;
 use robusta_jni::jni::sys::{jbyte, jsize};
 use simple_logger::SimpleLogger;
-use std::collections::HashMap;
 
 pub struct LoggingThreadedProducer<C: ProducerContext + 'static>(ThreadedProducer<C>);
 
@@ -38,19 +35,16 @@ impl FromClientConfig for LoggingThreadedProducer<LoggingProducerContext> {
     }
 }
 
-static PRODUCERS_MAP: Lazy<
-    RwLock<HashMap<String, LoggingThreadedProducer<LoggingProducerContext>>>,
-> = Lazy::new(|| {
+static INIT_LOGGING: Lazy<()> = Lazy::new(|| {
     SimpleLogger::new()
         .with_level(LevelFilter::Trace)
         .init()
-        .unwrap();
-    RwLock::new(HashMap::new())
+        .unwrap()
 });
 
 #[bridge]
 mod jni {
-    use crate::{borrow_as_slice, LoggingProducerContext, LoggingThreadedProducer, PRODUCERS_MAP};
+    use crate::{borrow_as_slice, LoggingProducerContext, LoggingThreadedProducer, INIT_LOGGING};
     use log::{error, info};
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
@@ -65,6 +59,7 @@ mod jni {
 
     use robusta_jni::jni::sys::jlong;
     use std::error::Error;
+    use std::ops::Deref;
     use std::time::Duration;
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
@@ -85,6 +80,8 @@ mod jni {
             bootstrap_servers: String,
             use_ssl: bool,
         ) -> JniResult<()> {
+            let _ = INIT_LOGGING.deref();
+
             let mut client_config = ClientConfig::new();
 
             // client_config.set("compression.type", "lz4");
@@ -103,8 +100,6 @@ mod jni {
 
             self.producer
                 .set(Box::into_raw(Box::new(producer)) as jlong)?;
-
-            let _ = PRODUCERS_MAP.read();
 
             info!("Created producer {bootstrap_servers} {use_ssl}");
 
