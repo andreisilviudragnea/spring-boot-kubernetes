@@ -1,6 +1,7 @@
 package com.example.demo
 
 import io.micrometer.core.instrument.logging.LoggingMeterRegistry
+import org.apache.kafka.clients.producer.DefaultRustKafkaProducer
 import org.apache.kafka.clients.producer.RustKafkaProducer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -38,9 +39,9 @@ class DemoApplication {
 }
 
 fun main() {
-    val rustKafkaProducer = RustKafkaProducer(mapOf("bootstrap.servers" to "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"))
+    val rustKafkaProducer: RustKafkaProducer = DefaultRustKafkaProducer(mapOf("bootstrap.servers" to "localhost:9092"))
 
-    val topics = rustKafkaProducer.fetchMetadata()
+    val topics = rustKafkaProducer.topics()
     println(topics)
 
     rustKafkaProducer.send(

@@ -64,14 +64,14 @@ mod jni {
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
     #[package(org.apache.kafka.clients.producer)]
-    pub struct RustKafkaProducer<'env: 'borrow, 'borrow> {
+    pub struct DefaultRustKafkaProducer<'env: 'borrow, 'borrow> {
         #[instance]
         raw: AutoLocal<'env, 'borrow>,
         #[field]
         producer: Field<'env, 'borrow, jlong>,
     }
 
-    impl<'env: 'borrow, 'borrow> RustKafkaProducer<'env, 'borrow> {
+    impl<'env: 'borrow, 'borrow> DefaultRustKafkaProducer<'env, 'borrow> {
         #[constructor]
         pub extern "java" fn new(env: &'borrow JNIEnv<'env>) -> JniResult<Self> {}
 
@@ -104,7 +104,7 @@ mod jni {
             Ok(())
         }
 
-        pub extern "jni" fn fetchMetadata(self) -> JniResult<Vec<String>> {
+        pub extern "jni" fn topics(self) -> JniResult<Vec<String>> {
             let result = self
                 .producer()?
                 .0
