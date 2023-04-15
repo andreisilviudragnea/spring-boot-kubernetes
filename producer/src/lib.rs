@@ -86,8 +86,8 @@ mod jni {
 
             for (key, value) in env.get_map(config)?.iter()? {
                 client_config.set(
-                    String::from(env.get_string(JString::from(key))?),
-                    String::from(env.get_string(JString::from(value))?),
+                    String::from(env.get_string(JString::from(key))?), // TODO: Handle missing key gracefully
+                    String::from(env.get_string(JString::from(value))?), // TODO: Handle missing value gracefully
                 );
             }
 
