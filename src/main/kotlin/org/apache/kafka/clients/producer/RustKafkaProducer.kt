@@ -15,7 +15,7 @@ class RustKafkaProducer(bootstrapServers: String, useSsl: Boolean) : AutoCloseab
 
     private external fun init(bootstrapServers: String, useSsl: Boolean)
 
-    external fun fetchMetadata(): ArrayList<String>
+    external fun fetchMetadata(): List<String>
 
     external fun send(topic: String, key: String, payload: ByteArray)
 
