@@ -84,12 +84,12 @@ mod jni {
 
             let mut client_config = ClientConfig::new();
 
-            client_config.extend(env.get_map(config)?.iter()?.map(|(key, value)| {
-                (
-                    String::from(env.get_string(JString::from(key)).unwrap()),
-                    String::from(env.get_string(JString::from(value)).unwrap()),
-                )
-            }));
+            for (key, value) in env.get_map(config)?.iter()? {
+                client_config.set(
+                    String::from(env.get_string(JString::from(key))?),
+                    String::from(env.get_string(JString::from(value))?),
+                );
+            }
 
             let producer: LoggingThreadedProducer<LoggingProducerContext> = client_config
                 .set_log_level(RDKafkaLogLevel::Debug)
