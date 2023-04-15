@@ -1,6 +1,8 @@
 package org.apache.kafka.clients.producer
 
-class RustKafkaProducer(bootstrapServers: String, useSsl: Boolean) {
+class RustKafkaProducer(bootstrapServers: String, useSsl: Boolean) : AutoCloseable {
+    private val producer: Long external get
+
     init {
         init(bootstrapServers, useSsl)
     }
@@ -13,9 +15,9 @@ class RustKafkaProducer(bootstrapServers: String, useSsl: Boolean) {
 
     private external fun init(bootstrapServers: String, useSsl: Boolean)
 
-    external fun fetchMetadata(bootstrapServers: String): ArrayList<String>
+    external fun fetchMetadata(): ArrayList<String>
 
-    external fun send(bootstrapServers: String, topic: String, key: String, payload: ByteArray)
+    external fun send(topic: String, key: String, payload: ByteArray)
 
-    external fun close(bootstrapServers: String)
+    external override fun close()
 }

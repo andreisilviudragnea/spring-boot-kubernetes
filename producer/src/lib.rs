@@ -50,17 +50,20 @@ static PRODUCERS_MAP: Lazy<
 
 #[bridge]
 mod jni {
-    use crate::{borrow_as_slice, PRODUCERS_MAP};
+    use crate::{borrow_as_slice, LoggingProducerContext, LoggingThreadedProducer, PRODUCERS_MAP};
     use log::{error, info};
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
     use rdkafka::ClientConfig;
-    use robusta_jni::convert::{IntoJavaValue, Signature, TryFromJavaValue, TryIntoJavaValue};
+    use robusta_jni::convert::{
+        Field, IntoJavaValue, Signature, TryFromJavaValue, TryIntoJavaValue,
+    };
 
     use robusta_jni::jni::errors::Result as JniResult;
     use robusta_jni::jni::objects::{AutoLocal, JObject, ReleaseMode};
     use robusta_jni::jni::JNIEnv;
 
+    use robusta_jni::jni::sys::jlong;
     use std::error::Error;
     use std::time::Duration;
 
@@ -69,21 +72,19 @@ mod jni {
     pub struct RustKafkaProducer<'env: 'borrow, 'borrow> {
         #[instance]
         raw: AutoLocal<'env, 'borrow>,
+        #[field]
+        producer: Field<'env, 'borrow, jlong>,
     }
 
     impl<'env: 'borrow, 'borrow> RustKafkaProducer<'env, 'borrow> {
         #[constructor]
         pub extern "java" fn new(env: &'borrow JNIEnv<'env>) -> JniResult<Self> {}
 
-        pub extern "jni" fn init(self, bootstrap_servers: String, use_ssl: bool) -> JniResult<()> {
-            {
-                let map = PRODUCERS_MAP.read().unwrap();
-
-                if map.get(&bootstrap_servers).is_some() {
-                    return Ok(());
-                }
-            }
-
+        pub extern "jni" fn init(
+            mut self,
+            bootstrap_servers: String,
+            use_ssl: bool,
+        ) -> JniResult<()> {
             let mut client_config = ClientConfig::new();
 
             // client_config.set("compression.type", "lz4");
@@ -97,24 +98,25 @@ mod jni {
 
             client_config.set_log_level(RDKafkaLogLevel::Debug);
 
-            let producer = client_config.create().expect("Producer creation failed");
+            let producer: LoggingThreadedProducer<LoggingProducerContext> =
+                client_config.create().expect("Producer creation failed");
 
-            let mut map = PRODUCERS_MAP.write().unwrap();
+            self.producer
+                .set(Box::into_raw(Box::new(producer)) as jlong)?;
 
-            map.insert(bootstrap_servers.clone(), producer);
+            let _ = PRODUCERS_MAP.read();
 
             info!("Created producer {bootstrap_servers} {use_ssl}");
 
             Ok(())
         }
 
-        pub extern "jni" fn fetchMetadata(
-            self,
-            bootstrap_servers: String,
-        ) -> JniResult<Vec<String>> {
-            let map = PRODUCERS_MAP.read().unwrap();
+        pub extern "jni" fn fetchMetadata(self) -> JniResult<Vec<String>> {
+            let producer =
+                self.producer.get()? as *const LoggingThreadedProducer<LoggingProducerContext>;
 
-            let producer = map.get(&bootstrap_servers).unwrap();
+            let producer =
+                unsafe { &*producer as &LoggingThreadedProducer<LoggingProducerContext> };
 
             let result = producer
                 .0
@@ -143,14 +145,15 @@ mod jni {
         pub extern "jni" fn send(
             self,
             env: &'borrow JNIEnv<'env>,
-            bootstrap_servers: String,
             topic: String,
             key: String,
             payload: JObject<'env>,
         ) -> JniResult<()> {
-            let map = PRODUCERS_MAP.read().unwrap();
+            let producer =
+                self.producer.get()? as *const LoggingThreadedProducer<LoggingProducerContext>;
 
-            let producer = map.get(&bootstrap_servers).unwrap();
+            let producer =
+                unsafe { &*producer as &LoggingThreadedProducer<LoggingProducerContext> };
 
             let jobject = payload.into_inner();
 
@@ -168,12 +171,13 @@ mod jni {
             Ok(())
         }
 
-        pub extern "jni" fn close(self, bootstrap_servers: String) -> JniResult<()> {
-            let mut map = PRODUCERS_MAP.write().unwrap();
+        pub extern "jni" fn close(self) -> JniResult<()> {
+            let producer =
+                self.producer.get()? as *mut LoggingThreadedProducer<LoggingProducerContext>;
 
-            map.remove(&bootstrap_servers);
+            unsafe { Box::from_raw(producer) };
 
-            info!("Closed producer {bootstrap_servers}");
+            info!("Closed producer");
 
             Ok(())
         }

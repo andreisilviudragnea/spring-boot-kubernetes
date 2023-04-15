@@ -42,19 +42,18 @@ fun main() {
 
     val rustKafkaProducer = RustKafkaProducer(bootstrapServers, false)
 
-    val topics = rustKafkaProducer.fetchMetadata(bootstrapServers)
+    val topics = rustKafkaProducer.fetchMetadata()
     println(topics)
 
     rustKafkaProducer.send(
-        bootstrapServers,
         "quickstart-events",
         "key",
         "payload".toByteArray()
     )
 
-    Thread.sleep(100_000)
+    Thread.sleep(1_000)
 
-    rustKafkaProducer.close(bootstrapServers)
+    rustKafkaProducer.close()
 
 //    kafkaProducer()
 //    runApplication<DemoApplication>(*args)
