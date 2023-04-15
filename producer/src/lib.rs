@@ -7,7 +7,7 @@ use rdkafka::error::KafkaResult;
 use rdkafka::producer::{DeliveryResult, ProducerContext, ThreadedProducer};
 use rdkafka::{ClientConfig, ClientContext};
 use robusta_jni::jni::objects::AutoArray;
-use robusta_jni::jni::sys::{jbyte, jsize};
+use robusta_jni::jni::sys::jbyte;
 use simple_logger::SimpleLogger;
 
 pub struct LoggingThreadedProducer<C: ProducerContext + 'static>(ThreadedProducer<C>);
@@ -86,14 +86,13 @@ mod jni {
 
             // client_config.set("compression.type", "lz4");
 
-            info!("bootstrap.servers {}", bootstrap_servers);
             client_config.set("bootstrap.servers", bootstrap_servers.clone());
             client_config.set("broker.address.family", "v4");
+            client_config.set_log_level(RDKafkaLogLevel::Debug);
+
             if use_ssl {
                 client_config.set("security.protocol", "SSL");
             }
-
-            client_config.set_log_level(RDKafkaLogLevel::Debug);
 
             let producer: LoggingThreadedProducer<LoggingProducerContext> =
                 client_config.create().expect("Producer creation failed");
@@ -150,15 +149,13 @@ mod jni {
             let producer =
                 unsafe { &*producer as &LoggingThreadedProducer<LoggingProducerContext> };
 
-            let jobject = payload.into_inner();
-
-            let jbyte_array = env.get_byte_array_elements(jobject, ReleaseMode::NoCopyBack)?;
-            let length = env.get_array_length(jobject)?;
+            let jbyte_array =
+                env.get_byte_array_elements(payload.into_inner(), ReleaseMode::NoCopyBack)?;
 
             let result = producer.0.send(
                 BaseRecord::with_opaque_to(&topic, ())
                     .key(&key)
-                    .payload(borrow_as_slice(&jbyte_array, length)),
+                    .payload(borrow_as_slice(&jbyte_array)),
             );
 
             info!("Send result {result:?}");
@@ -179,6 +176,8 @@ mod jni {
     }
 }
 
-fn borrow_as_slice<'a>(jbyte_array: &'a AutoArray<jbyte>, length: jsize) -> &'a [u8] {
-    unsafe { std::slice::from_raw_parts(jbyte_array.as_ptr() as *const u8, length as usize) }
+fn borrow_as_slice<'a>(jbyte_array: &'a AutoArray<jbyte>) -> &'a [u8] {
+    let data = jbyte_array.as_ptr() as *const u8;
+    let len = jbyte_array.size().unwrap() as usize;
+    unsafe { std::slice::from_raw_parts(data, len) }
 }
