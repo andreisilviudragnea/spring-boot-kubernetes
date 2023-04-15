@@ -105,13 +105,8 @@ mod jni {
         }
 
         pub extern "jni" fn fetchMetadata(self) -> JniResult<Vec<String>> {
-            let producer =
-                self.producer.get()? as *const LoggingThreadedProducer<LoggingProducerContext>;
-
-            let producer =
-                unsafe { &*producer as &LoggingThreadedProducer<LoggingProducerContext> };
-
-            let result = producer
+            let result = self
+                .producer()?
                 .0
                 .client()
                 .fetch_metadata(None, Duration::from_secs(5));
@@ -142,16 +137,10 @@ mod jni {
             key: String,
             payload: JObject<'env>,
         ) -> JniResult<()> {
-            let producer =
-                self.producer.get()? as *const LoggingThreadedProducer<LoggingProducerContext>;
-
-            let producer =
-                unsafe { &*producer as &LoggingThreadedProducer<LoggingProducerContext> };
-
             let jbyte_array =
                 env.get_byte_array_elements(payload.into_inner(), ReleaseMode::NoCopyBack)?;
 
-            let result = producer.0.send(
+            let result = self.producer()?.0.send(
                 BaseRecord::with_opaque_to(&topic, ())
                     .key(&key)
                     .payload(borrow_as_slice(&jbyte_array)),
@@ -171,6 +160,13 @@ mod jni {
             info!("Closed producer");
 
             Ok(())
+        }
+
+        fn producer(&self) -> JniResult<&LoggingThreadedProducer<LoggingProducerContext>> {
+            let producer =
+                self.producer.get()? as *const LoggingThreadedProducer<LoggingProducerContext>;
+
+            Ok(unsafe { &*producer as &LoggingThreadedProducer<LoggingProducerContext> })
         }
     }
 }
