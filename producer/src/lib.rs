@@ -104,7 +104,7 @@ mod jni {
             Ok(())
         }
 
-        pub extern "jni" fn topics(self) -> JniResult<Vec<String>> {
+        pub extern "jni" fn topics(self, env: &'borrow JNIEnv<'env>) -> JniResult<Vec<String>> {
             let result = self
                 .producer()?
                 .0
@@ -115,7 +115,12 @@ mod jni {
                 Ok(metadata) => metadata,
                 Err(error) => {
                     error!("Error on fetching metadata: {error:?}");
-                    return Ok(vec![]);
+
+                    self.drop_producer()?;
+
+                    return env
+                        .throw_new("java/lang/IllegalStateException", format!("{error:?}"))
+                        .map(|_| vec![]);
                 }
             };
 
@@ -152,10 +157,7 @@ mod jni {
         }
 
         pub extern "jni" fn close(self) -> JniResult<()> {
-            let producer =
-                self.producer.get()? as *mut LoggingThreadedProducer<LoggingProducerContext>;
-
-            unsafe { Box::from_raw(producer) };
+            self.drop_producer()?;
 
             info!("Closed producer");
 
@@ -167,6 +169,15 @@ mod jni {
                 self.producer.get()? as *const LoggingThreadedProducer<LoggingProducerContext>;
 
             Ok(unsafe { &*producer as &LoggingThreadedProducer<LoggingProducerContext> })
+        }
+
+        fn drop_producer(&self) -> JniResult<()> {
+            let producer =
+                self.producer.get()? as *mut LoggingThreadedProducer<LoggingProducerContext>;
+
+            unsafe { Box::from_raw(producer) };
+
+            Ok(())
         }
     }
 }
