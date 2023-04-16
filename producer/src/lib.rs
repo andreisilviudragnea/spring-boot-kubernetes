@@ -1,4 +1,5 @@
 use robusta_jni::bridge;
+use std::time::Instant;
 
 use log::{info, LevelFilter};
 use once_cell::sync::Lazy;
@@ -17,14 +18,15 @@ pub struct LoggingProducerContext;
 impl ClientContext for LoggingProducerContext {}
 
 impl ProducerContext for LoggingProducerContext {
-    type DeliveryOpaque = ();
+    type DeliveryOpaque = Box<ProducerDeliveryOpaque>;
 
     fn delivery(
         &self,
         delivery_result: &DeliveryResult<'_>,
-        _delivery_opaque: Self::DeliveryOpaque,
+        delivery_opaque: Self::DeliveryOpaque,
     ) {
-        info!("Delivery result {delivery_result:?}")
+        let elapsed = delivery_opaque.start.elapsed().as_millis();
+        info!("Delivery result: {delivery_result:?}; Elapsed: {elapsed} ms")
     }
 }
 
@@ -33,6 +35,11 @@ impl FromClientConfig for LoggingThreadedProducer {
         ThreadedProducer::from_config_and_context(config, LoggingProducerContext)
             .map(LoggingThreadedProducer)
     }
+}
+
+#[derive(Debug)]
+pub struct ProducerDeliveryOpaque {
+    start: Instant,
 }
 
 static INIT_LOGGING: Lazy<()> = Lazy::new(|| {
@@ -44,7 +51,7 @@ static INIT_LOGGING: Lazy<()> = Lazy::new(|| {
 
 #[bridge]
 mod jni {
-    use crate::{borrow_as_slice, LoggingThreadedProducer, INIT_LOGGING};
+    use crate::{borrow_as_slice, LoggingThreadedProducer, ProducerDeliveryOpaque, INIT_LOGGING};
     use log::{error, info};
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
@@ -60,7 +67,7 @@ mod jni {
     use robusta_jni::jni::sys::jlong;
     use std::error::Error;
     use std::ops::Deref;
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
     #[package(org.apache.kafka.clients.producer)]
@@ -146,9 +153,14 @@ mod jni {
                 env.get_byte_array_elements(payload.into_inner(), ReleaseMode::NoCopyBack)?;
 
             let result = self.producer()?.0.send(
-                BaseRecord::with_opaque_to(&topic, ())
-                    .key(&key)
-                    .payload(borrow_as_slice(&jbyte_array)),
+                BaseRecord::with_opaque_to(
+                    &topic,
+                    Box::new(ProducerDeliveryOpaque {
+                        start: Instant::now(),
+                    }),
+                )
+                .key(&key)
+                .payload(borrow_as_slice(&jbyte_array)),
             );
 
             info!("Send result {result:?}");
