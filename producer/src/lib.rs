@@ -10,7 +10,7 @@ use robusta_jni::jni::objects::AutoArray;
 use robusta_jni::jni::sys::jbyte;
 use simple_logger::SimpleLogger;
 
-pub struct LoggingThreadedProducer<C: ProducerContext + 'static>(ThreadedProducer<C>);
+pub struct LoggingThreadedProducer(ThreadedProducer<LoggingProducerContext>);
 
 pub struct LoggingProducerContext;
 
@@ -28,7 +28,7 @@ impl ProducerContext for LoggingProducerContext {
     }
 }
 
-impl FromClientConfig for LoggingThreadedProducer<LoggingProducerContext> {
+impl FromClientConfig for LoggingThreadedProducer {
     fn from_config(config: &ClientConfig) -> KafkaResult<Self> {
         ThreadedProducer::from_config_and_context(config, LoggingProducerContext)
             .map(LoggingThreadedProducer)
@@ -44,7 +44,7 @@ static INIT_LOGGING: Lazy<()> = Lazy::new(|| {
 
 #[bridge]
 mod jni {
-    use crate::{borrow_as_slice, LoggingProducerContext, LoggingThreadedProducer, INIT_LOGGING};
+    use crate::{borrow_as_slice, LoggingThreadedProducer, INIT_LOGGING};
     use log::{error, info};
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
@@ -91,7 +91,7 @@ mod jni {
                 );
             }
 
-            let producer: LoggingThreadedProducer<LoggingProducerContext> = client_config
+            let producer: LoggingThreadedProducer = client_config
                 .set_log_level(RDKafkaLogLevel::Debug)
                 .create()
                 .expect("Producer creation failed");
@@ -164,16 +164,14 @@ mod jni {
             Ok(())
         }
 
-        fn producer(&self) -> JniResult<&LoggingThreadedProducer<LoggingProducerContext>> {
-            let producer =
-                self.producer.get()? as *const LoggingThreadedProducer<LoggingProducerContext>;
+        fn producer(&self) -> JniResult<&LoggingThreadedProducer> {
+            let producer = self.producer.get()? as *const LoggingThreadedProducer;
 
-            Ok(unsafe { &*producer as &LoggingThreadedProducer<LoggingProducerContext> })
+            Ok(unsafe { &*producer as &LoggingThreadedProducer })
         }
 
         fn drop_producer(&self) -> JniResult<()> {
-            let producer =
-                self.producer.get()? as *mut LoggingThreadedProducer<LoggingProducerContext>;
+            let producer = self.producer.get()? as *mut LoggingThreadedProducer;
 
             unsafe { Box::from_raw(producer) };
 
