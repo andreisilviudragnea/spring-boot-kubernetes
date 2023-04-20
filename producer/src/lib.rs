@@ -1,8 +1,8 @@
 use robusta_jni::bridge;
+use std::sync::Once;
 use std::time::Instant;
 
 use log::{info, LevelFilter};
-use once_cell::sync::Lazy;
 use rdkafka::config::{FromClientConfig, FromClientConfigAndContext};
 use rdkafka::error::KafkaResult;
 use rdkafka::producer::{DeliveryResult, ProducerContext, ThreadedProducer};
@@ -42,16 +42,20 @@ pub struct ProducerDeliveryOpaque {
     start: Instant,
 }
 
-static INIT_LOGGING: Lazy<()> = Lazy::new(|| {
-    SimpleLogger::new()
-        .with_level(LevelFilter::Info)
-        .init()
-        .unwrap()
-});
+static ONCE: Once = Once::new();
+
+fn init() {
+    ONCE.call_once(|| {
+        SimpleLogger::new()
+            .with_level(LevelFilter::Info)
+            .init()
+            .unwrap()
+    });
+}
 
 #[bridge]
 mod jni {
-    use crate::{borrow_as_slice, LoggingThreadedProducer, ProducerDeliveryOpaque, INIT_LOGGING};
+    use crate::{borrow_as_slice, init, LoggingThreadedProducer, ProducerDeliveryOpaque};
     use log::{error, info};
     use rdkafka::config::RDKafkaLogLevel;
     use rdkafka::producer::{BaseRecord, Producer};
@@ -66,7 +70,7 @@ mod jni {
 
     use robusta_jni::jni::sys::jlong;
     use std::error::Error;
-    use std::ops::Deref;
+
     use std::time::{Duration, Instant};
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
@@ -87,7 +91,7 @@ mod jni {
             env: &'borrow JNIEnv<'env>,
             config: JObject<'env>,
         ) -> JniResult<()> {
-            let _ = INIT_LOGGING.deref();
+            init();
 
             let mut client_config = ClientConfig::new();
 
