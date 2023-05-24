@@ -48,6 +48,7 @@ fn init() {
     ONCE.call_once(|| {
         SimpleLogger::new()
             .with_level(LevelFilter::Info)
+            .with_threads(true)
             .init()
             .unwrap()
     });

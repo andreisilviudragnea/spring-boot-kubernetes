@@ -39,7 +39,7 @@ class DemoApplication {
 }
 
 fun main() {
-    val rustKafkaProducer: RustKafkaProducer = DefaultRustKafkaProducer(mapOf("bootstrap.servers" to "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"))
+    val rustKafkaProducer: RustKafkaProducer = DefaultRustKafkaProducer(mapOf("bootstrap.servers" to "localhost:9092"))
 
     val topics = rustKafkaProducer.topics()
     println(topics)
