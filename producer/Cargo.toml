@@ -12,4 +12,4 @@ crate-type = ["cdylib"]
 log = "0.4.19"
 rdkafka = { version = "0.32.2", features = ["cmake-build"] }
 robusta_jni = "0.2.1"
-simple_logger = { version = "4.1.0", features = ["threads"] }
+simple_logger = { version = "4.2.0", features = ["threads"] }
