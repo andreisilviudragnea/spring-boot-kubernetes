@@ -10,6 +10,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 log = "0.4.19"
-rdkafka = { version = "0.32.2", features = ["cmake-build"] }
+rdkafka = { version = "0.33.0", features = ["cmake-build"] }
 robusta_jni = "0.2.1"
 simple_logger = { version = "4.2.0", features = ["threads"] }
