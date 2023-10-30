@@ -503,9 +503,9 @@ dependencies = [
 
 [[package]]
 name = "robusta_jni"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c9faa82bb566c2087e0f2a22762670ebe405a88c4c4f76debb84ce3f9d446eb"
+checksum = "c080146e0cc733697fe500413871142af91bd879641205c2febbe5f982f304e3"
 dependencies = [
  "jni",
  "paste",
