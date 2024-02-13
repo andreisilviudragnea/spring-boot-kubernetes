@@ -2,19 +2,20 @@ package com.example.demo
 
 import org.apache.kafka.clients.admin.Admin
 import org.apache.kafka.clients.admin.AdminClientConfig
-import java.util.*
+import java.util.Properties
 
 fun kafkaAdminClient(): Admin {
     // TODO: Expose all Kafka metrics
     // No metadata metrics
 
-    val adminClient = Admin.create(
-        Properties().also {
-            it[AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG] =
-                "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"
-            it[AdminClientConfig.METADATA_MAX_AGE_CONFIG] = 15_000
-        }
-    )
+    val adminClient =
+        Admin.create(
+            Properties().also {
+                it[AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG] =
+                    "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"
+                it[AdminClientConfig.METADATA_MAX_AGE_CONFIG] = 15_000
+            },
+        )
 
     // 1. DNS resolution in constructor call thread (ClientUtils.parseAndValidateAddresses)
     // 2. DNS resolution in admin thread (Resolved host)

@@ -47,7 +47,7 @@ fun main() {
     rustKafkaProducer.send(
         "quickstart-events",
         "key",
-        "payload".toByteArray()
+        "payload".toByteArray(),
     )
 
     Thread.sleep(1_000)
