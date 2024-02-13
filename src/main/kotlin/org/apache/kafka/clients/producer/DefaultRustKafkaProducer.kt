@@ -17,7 +17,11 @@ class DefaultRustKafkaProducer(config: Map<String, String>) : RustKafkaProducer 
 
     external override fun topics(): List<String>
 
-    external override fun send(topic: String, key: String, payload: ByteArray)
+    external override fun send(
+        topic: String,
+        key: String,
+        payload: ByteArray,
+    )
 
     external override fun close()
 }

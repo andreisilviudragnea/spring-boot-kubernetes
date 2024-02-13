@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringSerializer
-import java.util.*
+import java.util.Properties
 
 fun kafkaProducer(): Producer<String, String> {
     // TODO: Expose all Kafka metrics
@@ -20,15 +20,16 @@ fun kafkaProducer(): Producer<String, String> {
     // - bufferpool-wait-ratio
     // - bufferpool-wait-time-ns-total
 
-    val producer = KafkaProducer<String, String>(
-        Properties().also {
-            it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-            it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-            it[ProducerConfig.METADATA_MAX_AGE_CONFIG] =
-                15_000 // This should not block threads doing producer.send() calls
-            it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"
-        }
-    )
+    val producer =
+        KafkaProducer<String, String>(
+            Properties().also {
+                it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+                it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+                it[ProducerConfig.METADATA_MAX_AGE_CONFIG] =
+                    15_000 // This should not block threads doing producer.send() calls
+                it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = "my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc:9092"
+            },
+        )
 
     println("Constructor calls")
 
