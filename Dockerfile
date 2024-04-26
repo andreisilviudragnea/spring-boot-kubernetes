@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as rust
+FROM ubuntu:24.04 as rust
 
 RUN apt-get update && apt-get install -y curl cmake g++
 
