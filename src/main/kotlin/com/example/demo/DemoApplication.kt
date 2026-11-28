@@ -5,9 +5,9 @@ import org.apache.kafka.clients.producer.DefaultRustKafkaProducer
 import org.apache.kafka.clients.producer.RustKafkaProducer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.boot.actuate.autoconfigure.metrics.KafkaMetricsAutoConfiguration
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.kafka.autoconfigure.metrics.KafkaMetricsAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.kafka.core.KafkaTemplate
 
