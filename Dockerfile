@@ -29,4 +29,4 @@ COPY --from=rust producer/target/debug/libproducer* ./
 
 RUN ls -al
 
-ENTRYPOINT ["java", "-Djava.library.path=.", "org.springframework.boot.loader.JarLauncher"]
+ENTRYPOINT ["java", "-Djava.library.path=.", "org.springframework.boot.loader.launch.JarLauncher"]
