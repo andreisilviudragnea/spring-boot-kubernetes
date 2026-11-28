@@ -1,6 +1,8 @@
 package org.apache.kafka.clients.producer
 
-class DefaultRustKafkaProducer(config: Map<String, String>) : RustKafkaProducer {
+class DefaultRustKafkaProducer(
+    config: Map<String, String>,
+) : RustKafkaProducer {
     private val producer: Long external get
 
     init {
